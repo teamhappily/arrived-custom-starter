@@ -63,7 +63,7 @@ The site shows your published event by default. To see unpublished changes, open
 http://localhost:3000/?preview=true
 ```
 
-This is the same URL the **Preview changes** button in Happily opens. Preview sticks for the rest of your browser session (it is stored in a session cookie), so internal navigation stays in preview. Append `?preview=false` to go back to the published site, or just close the browser. If you prefer the site to always render your draft locally, set `HAPPILY_EVENT_ENV=staging` in `.env.local` instead.
+This is the same URL the **Preview changes** button in Happily opens. Preview sticks for the rest of your browser session (it is stored in a session cookie), so internal navigation stays in preview — a banner at the top of the page reminds you while it is active, with an **Exit preview** link. Append `?preview=false` to go back to the published site, or just close the browser. If you prefer the site to always render your draft locally, set `HAPPILY_EVENT_ENV=staging` in `.env.local` instead.
 
 Preview is handled by `proxy.ts` at the repo root (Next.js 16 renamed `middleware` to `proxy`). If your fork carries a custom `middleware.ts`, consolidate its logic into `proxy.ts`.
 

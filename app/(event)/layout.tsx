@@ -5,7 +5,8 @@ import "../globals.css";
 
 import { EventShell } from "@/components/event-shell";
 import { styleValue } from "@/components/helpers";
-import { resolveEventEnv } from "@/lib/happily/config";
+import { PreviewBanner } from "@/components/preview-banner";
+import { isPreviewRequest, resolveEventEnv } from "@/lib/happily/config";
 import { getPublicEvent } from "@/lib/happily/queries";
 
 // First-party analytics proxy host. The subdomain is deliberately
@@ -38,6 +39,7 @@ export default async function EventLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const preview = await isPreviewRequest();
   const env = await resolveEventEnv();
   const eventData = await getPublicEvent({ env });
   const styles = eventData.event.styles;
@@ -64,6 +66,7 @@ export default async function EventLayout({
       className={`${openSans.variable} ${openSans.className} h-full antialiased`}
     >
       <body style={eventVars} className="min-h-full flex flex-col">
+        {preview && <PreviewBanner />}
         {analyticsId && (
           <script
             defer

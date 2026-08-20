@@ -33,16 +33,18 @@ export function getEventEnv(): HappilyEnv {
   return "prod";
 }
 
-// Request-scoped env resolution: the proxy sets PREVIEW_HEADER when the
-// request carries ?preview=true (or the preview session cookie). Reading
-// headers() opts the route into dynamic rendering, which matches how this
-// kit already works (fresh data on every request).
-export async function resolveEventEnv(): Promise<HappilyEnv> {
+// True when the proxy flagged this request as preview (?preview=true or
+// the preview session cookie). Reading headers() opts the route into
+// dynamic rendering, which matches how this kit already works (fresh
+// data on every request).
+export async function isPreviewRequest(): Promise<boolean> {
   const requestHeaders = await headers();
 
-  if (requestHeaders.get(PREVIEW_HEADER) === "1") {
-    return "staging";
-  }
+  return requestHeaders.get(PREVIEW_HEADER) === "1";
+}
 
-  return getEventEnv();
+// Request-scoped env resolution: preview requests always render draft
+// (staging) data; everything else falls back to the configured env.
+export async function resolveEventEnv(): Promise<HappilyEnv> {
+  return (await isPreviewRequest()) ? "staging" : getEventEnv();
 }
