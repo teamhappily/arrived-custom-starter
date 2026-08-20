@@ -9,8 +9,7 @@ import { PreviewBanner } from "@/components/preview-banner";
 import { isPreviewRequest, resolveEventEnv } from "@/lib/happily/config";
 import { getPublicEvent } from "@/lib/happily/queries";
 
-// First-party analytics proxy host. The subdomain is deliberately
-// neutral: ad blockers key on words like "analytics".
+// First-party analytics proxy host.
 const ANALYTICS_HOST = "https://hx.happily.events";
 
 const openSans = Open_Sans({
