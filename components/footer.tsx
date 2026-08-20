@@ -14,7 +14,7 @@ export function Footer({ baseTextColor }: FooterProps) {
     <footer className="z-10 mt-auto px-2 py-8">
       <div className="flex flex-col items-center justify-center gap-6">
         <a
-          href="https://arrived.happily.com/signup?utm_source=event-page&utm_medium=footer&utm_campaign=signup"
+          href="https://teamhappily.com/arrived?ref=starter-kit"
           target="_blank"
           rel="noopener noreferrer"
         >
