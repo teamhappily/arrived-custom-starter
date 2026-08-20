@@ -2,7 +2,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import openapiTS, { astToString } from "openapi-typescript";
 
-const DEFAULT_SCHEMA_URL = `${process.env.HAPPILY_API_SCHEMA_URL}/api/openapi.json`;
+const DEFAULT_API_BASE_URL = "https://app.happily.events";
+const SCHEMA_PATH = "/api/openapi.json";
 const OUTPUT_PATH = "lib/happily/generated/schema.d.ts";
 
 async function loadEnvLocal() {
@@ -38,7 +39,11 @@ async function fetchSchema(url) {
 
 await loadEnvLocal();
 
-const schemaUrl = process.env.HAPPILY_API_SCHEMA_URL || DEFAULT_SCHEMA_URL;
+// HAPPILY_API_SCHEMA_URL is an explicit override; otherwise the schema URL
+// is derived from the API base URL (which itself defaults to production).
+const schemaUrl =
+  process.env.HAPPILY_API_SCHEMA_URL ||
+  `${process.env.HAPPILY_API_BASE_URL || DEFAULT_API_BASE_URL}${SCHEMA_PATH}`;
 const schema = await fetchSchema(schemaUrl);
 
 // The current public schema emits internal JSON Schema refs to #/definitions.

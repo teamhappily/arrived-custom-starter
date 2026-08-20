@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/container";
 import { EventDetails } from "@/components/event-details";
 import { LivestreamGate } from "@/components/livestream-gate";
-import { getEventEnv, getEventId } from "@/lib/happily/config";
+import { getEventId, resolveEventEnv } from "@/lib/happily/config";
 import { getPublicEvent } from "@/lib/happily/queries";
 
 export default async function LivestreamPage() {
   const eventId = getEventId();
-  const env = getEventEnv();
+  const env = await resolveEventEnv();
   const eventData = await getPublicEvent({ eventId, env });
   const livestream = eventData.livestream;
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { happilyClient } from "./client";
-import { getEventEnv, getEventId } from "./config";
+import { getEventId, resolveEventEnv } from "./config";
 import type {
   HappilyEnv,
   PublicAttendeesData,
@@ -14,19 +14,23 @@ type PublicQueryOptions = {
   env?: HappilyEnv;
 };
 
+// The API answers "EVENT_NOT_FOUND" (e.g. an unpublished event fetched
+// with env=prod); "NOT_FOUND" is kept for backward compatibility.
+const NOT_FOUND_CODES = ["NOT_FOUND", "EVENT_NOT_FOUND"];
+
 export async function getPublicEvent({
   eventId = getEventId(),
-  env = getEventEnv(),
+  env,
 }: PublicQueryOptions = {}): Promise<PublicEventData> {
   const { data, error } = await happilyClient.GET("/api/public/{eventId}", {
     params: {
       path: { eventId },
-      query: { env },
+      query: { env: env ?? (await resolveEventEnv()) },
     },
   });
 
   if (error) {
-    if ("code" in error && error.code === "NOT_FOUND") {
+    if ("code" in error && error.code && NOT_FOUND_CODES.includes(error.code)) {
       notFound();
     }
 
@@ -42,7 +46,7 @@ export async function getPublicEvent({
 
 export async function getPublicPhotos({
   eventId = getEventId(),
-  env = getEventEnv(),
+  env,
   page = 1,
   pageSize = 48,
 }: PublicQueryOptions & {
@@ -54,7 +58,7 @@ export async function getPublicPhotos({
     {
       params: {
         path: { eventId },
-        query: { env, page, page_size: pageSize },
+        query: { env: env ?? (await resolveEventEnv()), page, page_size: pageSize },
       },
     },
   );
@@ -72,7 +76,7 @@ export async function getPublicPhotos({
 
 export async function getPublicAttendees({
   eventId = getEventId(),
-  env = getEventEnv(),
+  env,
   page = 1,
   pageSize = 12,
 }: PublicQueryOptions & {
@@ -84,7 +88,7 @@ export async function getPublicAttendees({
     {
       params: {
         path: { eventId },
-        query: { env, page, page_size: pageSize },
+        query: { env: env ?? (await resolveEventEnv()), page, page_size: pageSize },
       },
     },
   );

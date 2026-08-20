@@ -7,12 +7,12 @@ import { EventDetails } from "@/components/event-details";
 import { text } from "@/components/helpers";
 import { Markdown } from "@/components/markdown";
 import type { CalendarEvent } from "@/lib/happily/calendar";
-import { getEventEnv, getEventId } from "@/lib/happily/config";
+import { getEventId, resolveEventEnv } from "@/lib/happily/config";
 import { getPublicAttendees, getPublicEvent } from "@/lib/happily/queries";
 
 export default async function ConfirmationPage() {
   const eventId = getEventId();
-  const env = getEventEnv();
+  const env = await resolveEventEnv();
   const eventData = await getPublicEvent({ eventId, env });
   const attendees =
     eventData.event.content.displayAttendeesList === true

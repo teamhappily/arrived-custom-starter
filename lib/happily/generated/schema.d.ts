@@ -113,6 +113,8 @@ export interface components {
             display_settings: components["schemas"]["PublicEventDisplaySettings"];
             /** @description Whether custom sites should show add-to-calendar controls where relevant. */
             display_add_to_calendar: boolean;
+            /** @description Identifier custom sites use to configure analytics tracking. Null when analytics is not set up for the event. */
+            analytics_id: string | null;
         };
         /** @description Published event content with storage-backed image/video fields resolved to public URLs. */
         PublicEventContent: {
@@ -216,6 +218,7 @@ export interface components {
             id: number;
             name: string;
             is_active: boolean | null;
+            color: string;
         };
         PublicSessionSpeaker: {
             speaker_id: string;
@@ -463,6 +466,15 @@ export interface operations {
                     "application/json": components["schemas"]["PublicApiError"];
                 };
             };
+            /** @description Event does not have public API access. Access requires the Pro plan or the Custom Site permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApiError"];
+                };
+            };
             /** @description Event not found. */
             404: {
                 headers: {
@@ -529,6 +541,15 @@ export interface operations {
                     "application/json": components["schemas"]["PublicApiError"];
                 };
             };
+            /** @description Event does not have public API access. Access requires the Pro plan or the Custom Site permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApiError"];
+                };
+            };
             /** @description Event or photo gallery not found. */
             404: {
                 headers: {
@@ -588,6 +609,15 @@ export interface operations {
             };
             /** @description Invalid query parameters. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApiError"];
+                };
+            };
+            /** @description Event does not have public API access. Access requires the Pro plan or the Custom Site permission. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

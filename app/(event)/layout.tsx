@@ -5,7 +5,12 @@ import "../globals.css";
 
 import { EventShell } from "@/components/event-shell";
 import { styleValue } from "@/components/helpers";
+import { resolveEventEnv } from "@/lib/happily/config";
 import { getPublicEvent } from "@/lib/happily/queries";
+
+// First-party analytics proxy host. The subdomain is deliberately
+// neutral: ad blockers key on words like "analytics".
+const ANALYTICS_HOST = "https://hx.happily.events";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -33,8 +38,13 @@ export default async function EventLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const eventData = await getPublicEvent();
+  const env = await resolveEventEnv();
+  const eventData = await getPublicEvent({ env });
   const styles = eventData.event.styles;
+
+  // Only track published-site visits: no analytics in preview or when
+  // the event has no analytics configured.
+  const analyticsId = env === "prod" ? eventData.event.analytics_id : null;
 
   const eventVars = {
     "--event-primary-bg": styleValue(styles, "primaryBg", "#171717"),
@@ -54,6 +64,14 @@ export default async function EventLayout({
       className={`${openSans.variable} ${openSans.className} h-full antialiased`}
     >
       <body style={eventVars} className="min-h-full flex flex-col">
+        {analyticsId && (
+          <script
+            defer
+            src={`${ANALYTICS_HOST}/script.js`}
+            data-host-url={ANALYTICS_HOST}
+            data-website-id={analyticsId}
+          />
+        )}
         <EventShell eventData={eventData}>{children}</EventShell>
       </body>
     </html>

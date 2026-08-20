@@ -1,4 +1,4 @@
-import type { PublicEventData } from "@/lib/happily/types";
+import type { HappilyEnv, PublicEventData } from "@/lib/happily/types";
 
 import { AgendaList } from "./agenda-list";
 import { Container } from "./container";
@@ -15,7 +15,7 @@ import { SponsorsGrid } from "./sponsors-grid";
 type EventPageProps = {
   eventData: PublicEventData;
   eventId: string;
-  env: "staging" | "prod";
+  env: HappilyEnv;
 };
 
 export function EventPage({ eventData, eventId, env }: EventPageProps) {

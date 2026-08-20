@@ -2,12 +2,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/container";
-import { getEventEnv, getEventId } from "@/lib/happily/config";
+import { getEventId, resolveEventEnv } from "@/lib/happily/config";
 import { getPublicEvent, getPublicPhotos } from "@/lib/happily/queries";
 
 export default async function PhotosPage() {
   const eventId = getEventId();
-  const env = getEventEnv();
+  const env = await resolveEventEnv();
   const eventData = await getPublicEvent({ eventId, env });
 
   if (!eventData.event.photos_toggle || !eventData.photo_gallery?.enabled) {

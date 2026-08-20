@@ -18,7 +18,7 @@ Design references and starting-point templates live in Figma: [Design Templates]
 ### 1. Create your event
 
 1. Sign in to [app.happily.events](https://app.happily.events).
-2. Click **Create Event** and fill out the basics. You don't need to publish — staging mode reads drafts.
+2. Click **Create Event** and fill out the basics. You don't need to publish yet: preview mode (described below) reads drafts.
 3. Once created, you'll land on the event editor. Your event ID is in the URL: `app.happily.events/<EVENT_ID>/...` — copy that ID.
 
 ### 2. Fork and clone
@@ -37,7 +37,7 @@ Design references and starting-point templates live in Figma: [Design Templates]
 cp .env.example .env.local
 ```
 
-Open `.env.local` and paste your event ID into `HAPPILY_EVENT_ID`. The other variables are pre-filled with the production defaults.
+Open `.env.local` and paste your event ID into `HAPPILY_EVENT_ID`. That is the only required variable: the API URLs default to production in code. The commented-out variables are optional overrides for development (for example, pointing at a locally running CMS).
 
 ### 4. Generate the API types
 
@@ -53,7 +53,23 @@ Fetches the live OpenAPI schema and writes typed bindings to `lib/happily/genera
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — your event site renders with whatever content you've entered in Happily. Edits in the CMS show up here on refresh.
+Open [http://localhost:3000](http://localhost:3000) — your event site renders with whatever content you've entered in Happily. Edits in the CMS show up here on refresh. If you haven't published your event yet, you'll see a "Not found" page: open [http://localhost:3000/?preview=true](http://localhost:3000/?preview=true) instead to see your draft.
+
+### 6. Preview your draft
+
+The site shows your published event by default. To see unpublished changes, open any page with `?preview=true`:
+
+```
+http://localhost:3000/?preview=true
+```
+
+This is the same URL the **Preview changes** button in Happily opens. Preview sticks for the rest of your browser session (it is stored in a session cookie), so internal navigation stays in preview. Append `?preview=false` to go back to the published site, or just close the browser. If you prefer the site to always render your draft locally, set `HAPPILY_EVENT_ENV=staging` in `.env.local` instead.
+
+Preview is handled by `proxy.ts` at the repo root (Next.js 16 renamed `middleware` to `proxy`). If your fork carries a custom `middleware.ts`, consolidate its logic into `proxy.ts`.
+
+## Analytics
+
+If analytics is configured for your event in Happily, the starter automatically injects the tracking script on the published site. There is nothing to configure: the analytics ID comes from the event payload. The script is not injected in preview mode or when fetching staging data, so your metrics only count real visits.
 
 ## What's where
 
@@ -80,7 +96,7 @@ Errors to expect on the form: `CAPACITY_REACHED`, `DUPLICATE_EMAIL`, `VALIDATION
 
 1. Push your branch to GitHub.
 2. Go to [vercel.com/new](https://vercel.com/new) and import the repository.
-3. Under **Environment Variables**, paste the same four values from your `.env.local`.
+3. Under **Environment Variables**, add `HAPPILY_EVENT_ID` with your event ID. That is the only variable a standard deploy needs.
 4. Click **Deploy**.
 
 That's it. The generated API types (`lib/happily/generated/schema.d.ts`) are committed to the repo, so the build works out of the box. If you ever want fresh types on every deploy, change the Vercel build command to `npm run api:types && npm run build`.
@@ -93,10 +109,10 @@ That's it. The generated API types (`lib/happily/generated/schema.d.ts`) are com
 
 ## Troubleshooting
 
-- **`Missing HAPPILY_EVENT_ID in .env.local`** — you skipped step 3, or the file is empty. Run `cp .env.example .env.local` and paste your event ID.
-- **`Failed to fetch OpenAPI schema`** — check `HAPPILY_API_SCHEMA_URL` and that you have network access.
-- **"Not found" page at `/`** — wrong `HAPPILY_EVENT_ID`, or `HAPPILY_EVENT_ENV=prod` for an event you haven't published yet. Switch to `staging` while drafting.
-- **Styles look broken** — run `npm run api:types` once to make sure the generated schema is up to date.
+- **`Missing HAPPILY_EVENT_ID in .env.local`**: you skipped step 3, or the file is empty. Run `cp .env.example .env.local` and paste your event ID.
+- **`Failed to fetch OpenAPI schema`**: check that you have network access. If you set the `HAPPILY_API_SCHEMA_URL` override, make sure it points at a reachable schema URL.
+- **"Not found" page at `/`**: wrong `HAPPILY_EVENT_ID`, or the event isn't published yet (the site fetches published data by default). Open the page with `?preview=true` or set `HAPPILY_EVENT_ENV=staging` while drafting.
+- **Styles look broken**: run `npm run api:types` once to make sure the generated schema is up to date.
 
 ## Resources
 

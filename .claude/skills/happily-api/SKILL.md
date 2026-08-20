@@ -19,7 +19,7 @@ There is one rule that subsumes most others: **app code goes through `lib/happil
 | `getPublicPhotos` | `GET /api/public/{eventId}/photos` | throws `notFound()` |
 | `getPublicAttendees` | `GET /api/public/{eventId}/attendees` | **returns `null`** |
 
-All three accept `{ eventId?, env? }` (plus `page` / `pageSize` where pagination applies) and default to `getEventId()` / `getEventEnv()` from `lib/happily/config.ts`. Callers usually pass nothing.
+All three accept `{ eventId?, env? }` (plus `page` / `pageSize` where pagination applies). `eventId` defaults to `getEventId()`; when `env` is not passed, the query resolves it per request via `resolveEventEnv()` from `lib/happily/config.ts` (preview-aware). Callers usually pass nothing.
 
 ```ts
 import { getPublicEvent } from "@/lib/happily/queries";
@@ -47,7 +47,7 @@ When you wrap a new endpoint (say `/api/public/{eventId}/sponsors`):
 
 1. Regenerate types first if the endpoint is new in the upstream schema: `npm run api:types`. Then the endpoint path and response type are available in `lib/happily/generated/schema.d.ts`.
 2. Add a domain type alias in `lib/happily/types.ts` (e.g., `export type PublicSponsorsData = components["schemas"]["PublicSponsorsApiResponse"];`).
-3. Add a function in `lib/happily/queries.ts` next to the existing three, following the same pattern: destructure `{ eventId = getEventId(), env = getEventEnv(), ... }`, call `happilyClient.GET("/api/public/{eventId}/sponsors", { params: { path: { eventId }, query: { env } } })`, choose your error style.
+3. Add a function in `lib/happily/queries.ts` next to the existing three, following the same pattern: destructure `{ eventId = getEventId(), env, ... }`, call `happilyClient.GET("/api/public/{eventId}/sponsors", { params: { path: { eventId }, query: { env: env ?? (await resolveEventEnv()) } } })`, choose your error style.
 4. Import from `lib/happily/queries` in the page/component that consumes it. Render in a server component by default.
 
 Do **not** call `happilyClient.GET` directly from a page. The wrapper exists so error handling, env injection, and types stay consistent.
@@ -79,16 +79,16 @@ If a TypeScript error claims a field doesn't exist after the upstream API added 
 
 ## Environment variables
 
-Four env vars drive the integration. Set them in `.env.local`:
+Only one env var is required; the rest are optional overrides. Set them in `.env.local`:
 
 | Var | Required | Validated by | Notes |
 | --- | --- | --- | --- |
-| `HAPPILY_API_BASE_URL` | yes | `lib/happily/client.ts` (implicitly) | Base URL for `openapi-fetch`. |
-| `HAPPILY_API_SCHEMA_URL` | yes (for `api:types`) | `scripts/generate-api-types.mjs` | Used only at type-generation time. |
-| `HAPPILY_EVENT_ID` | yes | `getEventId()` — throws `"Missing HAPPILY_EVENT_ID in .env.local"` | The event this customization renders. |
-| `HAPPILY_EVENT_ENV` | optional | `getEventEnv()` — falls back to `"staging"` | Only `"prod"` or `"staging"` are accepted; anything else silently becomes `"staging"`. |
+| `HAPPILY_EVENT_ID` | yes | `getEventId()`, which throws `"Missing HAPPILY_EVENT_ID in .env.local"` | The event this customization renders. |
+| `HAPPILY_API_BASE_URL` | optional | `getApiBaseUrl()` | Defaults to `https://app.happily.events`. Override to point at a locally running CMS. |
+| `HAPPILY_API_SCHEMA_URL` | optional (used by `api:types`) | `scripts/generate-api-types.mjs` | Defaults to the schema URL derived from the API base URL. Used only at type-generation time. |
+| `HAPPILY_EVENT_ENV` | optional | `getEventEnv()`, which falls back to `"prod"` | Only `"prod"` or `"staging"` are accepted; anything else silently becomes `"prod"`. |
 
-`getEventId()` and `getEventEnv()` are the validators — call them rather than reading `process.env` directly anywhere in app code.
+`getEventId()`, `getApiBaseUrl()` and `getEventEnv()` are the validators: call them rather than reading `process.env` directly anywhere in app code. Inside a request, prefer `resolveEventEnv()`: it returns `"staging"` when the request is in preview mode (`?preview=true`, handled by `proxy.ts`) and falls back to `getEventEnv()` otherwise.
 
 ## Registration
 
@@ -133,7 +133,7 @@ Every other `FormData` key (except `$ACTION_*` Next.js internals, which are skip
 
 When users report this symptom, work the hypotheses in this order — they are listed from most to least likely based on how easy each is to misconfigure:
 
-1. **Wrong environment.** `getEventEnv()` silently returns `"staging"` for anything that isn't exactly `"prod"` or `"staging"` (typos like `"production"`, `"PROD"`, trailing whitespace, or an unset var). Submissions go to the staging dashboard while the user watches prod. First check: log into the staging Happily dashboard for the same event ID. If the missing registrations are there, you've found it. Verify `HAPPILY_EVENT_ENV` *in the deployed runtime*, not in your local `.env.local`.
+1. **Wrong environment.** `getEventEnv()` silently returns `"prod"` for anything that isn't exactly `"prod"` or `"staging"` (typos like `"production"`, `"PROD"`, trailing whitespace, or an unset var). Also remember preview mode: a registration submitted from a `?preview=true` session goes to staging. First check: look at the other environment's Happily dashboard for the same event ID. If the missing registrations are there, you've found it. Verify `HAPPILY_EVENT_ENV` *in the deployed runtime*, not in your local `.env.local`.
 2. **Wrong form / wrong tab.** Ask which form the user submitted. If they saw the "Submitted successfully" banner, they were on the livestream gate (`form_type: 3`) — check that tab in the dashboard, not the main registrations list. (See the two-render-sites table above.)
 3. **Field-name mismatch.** Add `console.log("register entries", [...formData.entries()])` at the top of `submitRegistration` and capture a failing submission. Cross-reference field IDs against the alias list. A misnamed name field produces empty-string `firstName`/`lastName` and a dashboard row searchable only by email.
 4. **Swallowed response details.** Temporarily log the full openapi-fetch response (`{ status: response.status, data, error }`) — the action currently discards `data`. A 200 with no `registration.id`, or a non-2xx error body the schema didn't declare, would otherwise be invisible.
